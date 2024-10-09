@@ -1,11 +1,11 @@
 {
 	"name": "StageBan",
-	"version_number": "1.0.0",
+	"version_number": "1.0.1",
 	"website_url": "https://github.com/SmoothSpatula/SmoothSpatula-StageBan",
 	"description": "Let's you ban stages from the ImGUI menu (insert key to open).",
 	"dependencies": [
 		"ReturnOfModding-ReturnOfModding-1.0.32",
-    "RoRRModdingToolkit-RoRR_Modding_Toolkit-1.0.0",
-    "SmoothSpatula-TomlHelper-1.0.1"
+    		"RoRRModdingToolkit-RoRR_Modding_Toolkit-1.1.12",
+    		"SmoothSpatula-TomlHelper-1.0.1"
 	]
 }
