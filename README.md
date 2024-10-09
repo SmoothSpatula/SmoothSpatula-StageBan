@@ -3,6 +3,8 @@
 Let's you ban stages, while keeping the usual stage rotation. 
 Might update it to also ban specific variants if anyone wants that.
 
+Source of the Providence Image : User Shoddy-Sink-6983 on Reddit
+
 ## Special Thanks To
 * The Return Of Modding team
 
