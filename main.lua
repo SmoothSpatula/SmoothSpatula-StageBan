@@ -1,87 +1,79 @@
--- StageBan v1.0.0
+-- StageBan v1.0.1
 -- SmoothSpatula
 
 log.info("Successfully loaded ".._ENV["!guid"]..".")
 
 -- == Config/Loading == --
 
-mods.on_all_mods_loaded(function() for _, m in pairs(mods) do if type(m) == "table" and m.RoRR_Modding_Toolkit then Callback = m.Callback break end end end)
+local function Shuffle(t)
+    local s = {}
+    for i = 1, #t do s[i] = t[i] end
+    for i = #t, 2, -1 do
+        local j = math.random(i)
+        s[i], s[j] = s[j], s[i]
+    end
+    return s
+end
 
-params = {
-    ['0'] = false,
-    ['1'] = false,
-    ['2'] = false,
-    ['3'] = false,
-    ['4'] = false,
-    ['5'] = false,
-    ['6'] = false,
-    ['7'] = false,
-    ['8'] = false
-}
+params = {}
+mods.on_all_mods_loaded(function() for _, m in pairs(mods) do if type(m) == "table" and m.RoRR_Modding_Toolkit then for _, c in ipairs(m.Classes) do if m[c] then _G[c] = m[c] end end end end end)
 mods.on_all_mods_loaded(function() for k, v in pairs(mods) do if type(v) == "table" and v.tomlfuncs then Toml = v end end 
     params = Toml.config_update(_ENV["!guid"], params)
 end)
 
--- ========== ImGui ==========
+local current_stage_pool = 1
 local stages = {}
-gui.add_to_menu_bar(function()
-    ImGui.TextColored(1, 0.5, 1, 1, "-- Banned Stages --")
-    for i=1, 9 do 
-        local c = ((params[(i-1)..'']) and {"Banned"} or {"  "})[1] 
-        if ImGui.Button("["..c.."]  ".. stages[i]) then
-            params[(i-1)..''] = not params[(i-1)..'']
-            Toml.save_cfg(_ENV["!guid"], params)
+
+__post_initialize = function() -- Called after all custom stages are loaded
+
+    local order = Array.wrap(gm.variable_global_get("stage_progression_order"))
+
+    -- Get all stages orders
+    for a, i in ipairs(order) do
+        stages[a] = {}
+        local list = List.wrap(i)
+        for n, s in ipairs(list) do
+            stages[a][n] = s
         end
     end
-end)
 
--- == Init == --
+    gui.add_to_menu_bar(function()
+        ImGui.TextColored(1, 0.5, 1, 1, "-- Banned Stages --")
+        for i=1, #stages do
+            ImGui.TextColored(0, 1, 1, 1, "Stage level "..i)
+            for j=1, #stages[i] do
+                
+                local stage = Stage.wrap(stages[i][j])
+                local stage_str = stage.namespace.."-"..stage.identifier
 
-function __initialize() -- Called by RoRR_Modding_Toolkit
-    local CLASS_STAGE = gm.variable_global_get("class_stage")
-    local lang_map = gm.variable_global_get("_language_map")
-    for i = 1, #CLASS_STAGE do
-        stages[i] = gm.ds_map_find_value(lang_map, "stage."..CLASS_STAGE[i][2]..".name")
-    end
-    Callback.add("onGameStart", "StageBannerOnGameStart", function() current_stage_level = 0 end)
+                if not params[stage_str..''] then params[stage_str..''] = false end
+                local c = ((params[stage_str..'']) and {"Banned"} or {"  "})[1] 
+
+                if ImGui.Button("["..c.."]  ".. Language.translate_token("stage."..stage.identifier..".name")) then
+                    params[stage_str..''] = not params[stage_str..'']
+                    Toml.save_cfg(_ENV["!guid"], params)
+                end
+            end
+        end
+    end)
+
+    -- Replaces the way stages are rolled
+    gm.post_script_hook(gm.constants.stage_roll_next, function(self, other, result, args)
+        local chosen_stage = nil
+        while chosen_stage == nil do
+            if current_stage_pool >= 6 then current_stage_pool = 1 end
+            local stages_permutation = Shuffle(stages[current_stage_pool])
+            for _, stage_id in pairs(stages_permutation) do
+                local stage = Stage.wrap(stage_id)
+                if not params[stage.namespace.."-"..stage.identifier] then 
+                    chosen_stage = stage_id
+                end
+            end
+            current_stage_pool = current_stage_pool + 1
+        end
+
+        result.value = chosen_stage
+    end)
+
+    Callback.add("onGameStart", "StageBannerOnGameStart", function() current_stage_pool = 1 end)
 end
-
--- == Hook == --
-
-current_stage_level = 0
-gm.pre_script_hook(gm.constants.stage_goto, function(self, other, result, args)
-    if args[1].value > 8.0 then return end
-
-    -- In case you ban everything, go to final stage
-    local total_bans = 0
-    for i=0, 8 do
-        total_bans = total_bans + (params[i..''] and {1} or {0})[1]
-    end
-    if total_bans == 9 then
-        args[1].value = 9.0
-        return
-    end
-
-    if current_stage_level > 4 then current_stage_level = 0 end
-    local stage_switch = math.random(0, 1)
-    repeat
-        if current_stage_level == 4 then
-            if not params[(current_stage_level * 2)..''] then 
-            stage_switch = 0 
-            break end
-        else
-            if not params[(current_stage_level * 2 + stage_switch)..''] then 
-                break end
-            stage_switch = 1 - stage_switch
-            if not params[(current_stage_level * 2 + stage_switch)..''] then 
-                break end
-        end
-        if current_stage_level < 4 then
-            current_stage_level = current_stage_level +1
-        else 
-            current_stage_level = 0
-        end
-    until false
-    args[1].value = current_stage_level*2 + stage_switch
-    current_stage_level = current_stage_level + 1
-end)
