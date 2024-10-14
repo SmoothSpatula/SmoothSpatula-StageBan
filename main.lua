@@ -1,4 +1,4 @@
--- StageBan v1.0.1
+-- StageBan v1.0.2
 -- SmoothSpatula
 
 log.info("Successfully loaded ".._ENV["!guid"]..".")
@@ -23,6 +23,7 @@ end)
 
 local current_stage_pool = 1
 local stages = {}
+local MAX_STAGES = 6
 
 __post_initialize = function() -- Called after all custom stages are loaded
 
@@ -31,6 +32,7 @@ __post_initialize = function() -- Called after all custom stages are loaded
     -- Get all stages orders
     for a, i in ipairs(order) do
         stages[a] = {}
+        MAX_STAGES = a
         local list = List.wrap(i)
         for n, s in ipairs(list) do
             stages[a][n] = s
@@ -59,9 +61,10 @@ __post_initialize = function() -- Called after all custom stages are loaded
 
     -- Replaces the way stages are rolled
     gm.post_script_hook(gm.constants.stage_roll_next, function(self, other, result, args)
+        if args[1].value == MAX_STAGES then return end
         local chosen_stage = nil
         while chosen_stage == nil do
-            if current_stage_pool >= 6 then current_stage_pool = 1 end
+            if current_stage_pool >= MAX_STAGES then current_stage_pool = 1 end
             local stages_permutation = Shuffle(stages[current_stage_pool])
             for _, stage_id in pairs(stages_permutation) do
                 local stage = Stage.wrap(stage_id)
