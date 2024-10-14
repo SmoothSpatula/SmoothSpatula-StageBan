@@ -1,6 +1,6 @@
 {
 	"name": "StageBan",
-	"version_number": "1.0.1",
+	"version_number": "1.0.2",
 	"website_url": "https://github.com/SmoothSpatula/SmoothSpatula-StageBan",
 	"description": "Let's you ban stages from the ImGUI menu (insert key to open).",
 	"dependencies": [
