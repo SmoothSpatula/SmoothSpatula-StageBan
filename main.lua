@@ -1,4 +1,4 @@
--- StageBan v1.0.2
+-- StageBan v1.0.3
 -- SmoothSpatula
 
 log.info("Successfully loaded ".._ENV["!guid"]..".")
@@ -15,11 +15,10 @@ local function Shuffle(t)
     return s
 end
 
+mods["RoRRModdingToolkit-RoRR_Modding_Toolkit"].auto(true)
+mods["SmoothSpatula-TomlHelper"].auto()
 params = {}
-mods.on_all_mods_loaded(function() for _, m in pairs(mods) do if type(m) == "table" and m.RoRR_Modding_Toolkit then for _, c in ipairs(m.Classes) do if m[c] then _G[c] = m[c] end end end end end)
-mods.on_all_mods_loaded(function() for k, v in pairs(mods) do if type(v) == "table" and v.tomlfuncs then Toml = v end end 
-    params = Toml.config_update(_ENV["!guid"], params)
-end)
+params = Toml.config_update(_ENV["!guid"], params)
 
 local current_stage_pool = 1
 local stages = {}
@@ -64,7 +63,7 @@ __post_initialize = function() -- Called after all custom stages are loaded
         if args[1].value == MAX_STAGES then return end
         local chosen_stage = nil
         while chosen_stage == nil do
-            if current_stage_pool >= MAX_STAGES then current_stage_pool = 1 end
+            if current_stage_pool > MAX_STAGES then current_stage_pool = 1 end
             local stages_permutation = Shuffle(stages[current_stage_pool])
             for _, stage_id in pairs(stages_permutation) do
                 local stage = Stage.wrap(stage_id)
